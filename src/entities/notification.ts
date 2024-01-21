@@ -18,36 +18,20 @@ export type NotificationProps = {
 export class NotificationOptions
 {
     async createNotification(props: NotificationProps){
-        db('notifications')
+        await db('notifications')
             .insert(props)
-            .then(() => {
-                console.log('Notification created');
-            })
-            .catch((error: any) => {
-                console.error(error);
-            })
     }
 
     async markAsRead(id: number){
-        try {
             await db('notifications')
               .where('notifications.id', id)
               .update({ is_read: true });
-          } catch (error) {
-            throw error;
-          }
     }
 
     async readNotification(id: number){
-        try {
             const notification : Notification = await db.select('id', 'created_by', 'sent_to', 'created_at', 'text')
                 .from('notifications')
                 .where('id', id)
-            this.markAsRead(id)
             return notification
-        }
-        catch (error) {
-            throw error
-        }
     }
 }

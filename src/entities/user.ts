@@ -10,6 +10,11 @@ export type UserProps = {
 }
 export class UserOptions
 {
+    async getAllUsers(){
+        const user : User[] = await db.select('id', 'username')
+                .from('users')
+            return user
+    }
     async createUser(props: UserProps){
         db('users')
             .insert(props)
@@ -22,42 +27,32 @@ export class UserOptions
     }
 
     async getAllNotifications(id: number): Promise<Notification[]> {
-        try {
             const notifications : Notification[] = await db.select('id', 'created_by', 'created_at', 'is_read', 'text')
                 .from('notifications')
                 .where('notifications.sent_to', id)
 
             return notifications;
-        }
-        catch (error) {
-            console.log(error)
-            throw error
-        }
     }
 
     async getUnreadNotifications(id: number): Promise<Notification[]> {
-        try {
             const notifications : Notification[] = await db.select('id', 'created_by', 'created_at', 'text')
                 .from('notifications')
                 .where({ sent_to: id, is_read: false })
             return notifications;
-        }
-        catch (error) {
-            console.log(error)
-            throw error
-        }
     }
 
     async readUser(id: number) {
-        try {
             const user : User = await db.select('id', 'username')
                 .from('users')
                 .where('id', id)
             return user
-        }
-        catch (error) {
-            throw error
-        }
         
+    }
+
+    async getUsersExceptChosen(id: number) {
+        const users : User [] = await db.select('id', 'username')
+            .from('users')
+            .whereNot('id', id)
+        return users
     }
 }
