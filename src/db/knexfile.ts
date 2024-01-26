@@ -1,11 +1,10 @@
 import type { Knex } from "knex";
-import { config as dotenvConfig } from 'dotenv';
-import path from 'path';
-dotenvConfig({ path: path.resolve(__dirname, '../../.env') });
+import path from "path"
+import { CONFIG } from "../config";
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: "pg",
-    connection: process.env.URL,
+    connection: CONFIG.DATABASE_URL,
     migrations: {
       directory: path.resolve(__dirname, './migrations')
     }

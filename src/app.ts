@@ -1,10 +1,8 @@
 import WebSocket from 'ws';
-import path from 'path';
 import express, { Request, Response} from "express";
-import { config as dotenvConfig } from 'dotenv';
+import { CONFIG } from './config';
 import { NotificationService } from './service/notificationService';
 import { UserService } from './service/userService';
-dotenvConfig({ path: path.resolve(__dirname, '../.env') });
 const app = express()
 const cors = require('cors');
 const http = require('http')
@@ -21,7 +19,6 @@ const server = http.createServer(app)
 const wss = new WebSocket.Server({ server });
 const clients = new Map<number, WebSocket>();
 wss.on('connection', (ws: WebSocket) => {
-  let a: number
   ws.on('message', (message: string) => {
     const parsedMessage = JSON.parse(message);
     const clientId = parsedMessage.clientId;
@@ -102,12 +99,12 @@ app
         otherUsers: otherUsers
       })
   })
-if (typeof process.env.PORT === 'string'){
-  app.listen(Number(process.env.PORT), () => {
-    console.log(`listening ${Number(process.env.PORT)}`)
+if (typeof CONFIG.PORT === 'string'){
+  app.listen(Number(CONFIG.PORT), () => {
+    console.log(`listening ${Number(CONFIG.PORT)}`)
   })
-  server.listen(Number(process.env.PORT) + 1, () => {
-    console.log(`websocket ${Number(process.env.PORT) + 1}`)
+  server.listen(Number(CONFIG.PORT) + 1, () => {
+    console.log(`websocket ${Number(CONFIG.PORT) + 1}`)
   })
 }
 
