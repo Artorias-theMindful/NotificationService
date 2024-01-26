@@ -1,11 +1,9 @@
-declare var require: any
 import WebSocket from 'ws';
 import path from 'path';
-import express, { Request, Response, json} from "express";
-import { User, UserOptions, UserProps } from "./entities/user";
-import {Notification, NotificationOptions, NotificationProps} from "./entities/notification";
+import express, { Request, Response} from "express";
 import { config as dotenvConfig } from 'dotenv';
-import { WebSocketServer } from 'ws';
+import { NotificationService } from './service/notificationService';
+import { UserService } from './service/userService';
 dotenvConfig({ path: path.resolve(__dirname, '../.env') });
 const app = express()
 const cors = require('cors');
@@ -17,8 +15,8 @@ app.use(cors({
   "optionsSuccessStatus": 204
 }));
 app.use(express.json())
-const userOptions = new UserOptions()
-const notificationOptions = new NotificationOptions()
+const userService = new UserService()
+const notificationService = new NotificationService()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server });
 const clients = new Map<number, WebSocket>();
@@ -41,19 +39,18 @@ wss.on('connection', (ws: WebSocket) => {
 app
   .route('/users')
   .get(async (req: Request, res: Response) => {
-    const data = await userOptions.getAllUsers()
+    const data = await userService.getAllUsers()
       res.status(200).json({
         user: data
       })
   })
   .post((req: Request, res: Response) => {
-    userOptions.createUser(req.body)
-    res.sendStatus(200)
+    userService.createUser(req.body).then(() => res.sendStatus(200))
 })
 app
   .route('/users/:id')
   .get(async (req: Request, res: Response) => {
-      const data = await userOptions.readUser(Number(req.params.id))
+      const data = await userService.readUser(Number(req.params.id))
       res.status(200).json({
         user: data 
       })
@@ -62,7 +59,7 @@ app
   .route('/users/:id/notifications')
 
   .post(async (req: Request, res: Response) => {
-      await notificationOptions.createNotification(req.body)
+      await notificationService.createNotification(req.body)
       const ws = clients.get(req.body.sent_to);
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ message: "UPDATE" }));
@@ -73,23 +70,24 @@ app
   
 
   .get(async (req: Request, res: Response) => {
-      const data = await userOptions.getAllNotifications(Number(req.params.id))
+      const data = await userService.getAllNotifications(Number(req.params.id))
       res.status(200).json({
         notifications: data 
       })
   })
 
 app
-  .route('/users/:userId/notifications/:notificationId')
+  .route('/notifications/:notificationId')
   .post(async (req: Request, res: Response) => {
-    notificationOptions.markAsRead(Number(req.params.notificationId))
+    
+    await notificationService.markAsRead(Number(req.params.notificationId))
     res.sendStatus(200)
   })
 app
   .route('/users/:id/notifications/notRead')
 
   .get(async (req: Request, res: Response) =>{
-      const data = await userOptions.getUnreadNotifications(Number(req.params.id))
+      const data = await userService.getUnreadNotifications(Number(req.params.id))
       res.status(200).json({
         notifications: data 
       })
@@ -97,11 +95,11 @@ app
   app
   .route('/users/:id/usersExceptChosen')
   .get(async (req : Request, res: Response) =>{
-      const data = await userOptions.getUsersExceptChosen(Number(req.params.id))
-      const user = await userOptions.readUser(Number(req.params.id))
+      const chosenUser = await userService.readUser(Number(req.params.id))
+      const otherUsers = await userService.getUsersExceptChosen(Number(req.params.id))
       res.status(200).json({
-        chosenUser: user,
-        otherUsers: data 
+        chosenUser: chosenUser,
+        otherUsers: otherUsers
       })
   })
 if (typeof process.env.PORT === 'string'){
